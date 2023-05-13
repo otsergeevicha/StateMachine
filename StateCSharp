@@ -1,0 +1,61 @@
+public class StateMachine
+{
+    private Dictionary<Type, ISwitcherState> _states;
+    private ISwitcherState _currentState;
+
+    public StateMachine()
+    {
+        InitializeStates();
+        GeneralDependencyInjections();
+        FirstEnterState();    
+    }
+    
+    public void EnterState<TState>() where TState : ISwitcherState
+    {
+        var state = _states[typeof(TState)];
+        _currentState.Disable();
+        state.Enable();
+        _currentState = state;
+    }
+
+    private void InitializeStates()
+    {
+        _states = new Dictionary<Type, ISwitcherState>
+        {
+            [typeof(SearchTargetState)] = new SearchTargetState(),
+            [typeof(MovementState)] = new MovementState(),
+            [typeof(AttackState)] = new AttackState(),
+        };
+    }
+
+    private void GeneralDependencyInjections()
+    {
+        foreach (var state in _states)
+        {
+            state.Value.Init(this);
+            state.Value.Disable();
+        }
+    }
+
+    private void FirstEnterState() => 
+        EnterState<SearchTargetState>();
+}
+
+public abstract class State : ISwitcherState
+{
+    protected StateMachine StateMachine;
+
+    public abstract void Enable();
+
+    public abstract void Disable();
+
+    public void Init(StateMachine stateMachine) =>
+        StateMachine = stateMachine;
+}
+
+public interface ISwitcherState
+{
+    void Enable();
+    void Disable();
+    public void Init(StateMachine stateMachine);
+}
